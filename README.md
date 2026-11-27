@@ -56,7 +56,7 @@ ML Resume Project/
 
 ---
 
-## Installation & How to Run Locally
+## Installation & How to Run
 
 1. **Install dependencies:**
    ```bash
@@ -73,28 +73,6 @@ ML Resume Project/
 
 4. **Open in your browser:**
    Navigate to `http://127.0.0.1:5000`
-
----
-
-## Deploy on Render (Free Web Service via GitHub)
-
-This repository includes `render.yaml`, `Procfile`, and `requirements.txt` configured for Render:
-
-1. Push this project folder to a GitHub repository:
-   ```bash
-   git init
-   git add .
-   git commit -m "Deploy FitScore AI"
-   git branch -M main
-   git remote add origin https://github.com/<your-username>/<your-repo>.git
-   git push -u origin main
-   ```
-2. Sign in to [Render](https://render.com) → click **New +** → **Blueprint** (to auto-detect `render.yaml`) or **Web Service** and connect your GitHub repository.
-3. Confirm settings:
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `gunicorn --workers 1 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT app:app`
-   - **Health Check Path:** `/health`
-4. Click **Deploy Web Service** — once live, open your `https://<your-app>.onrender.com` URL.
 
 ---
 
