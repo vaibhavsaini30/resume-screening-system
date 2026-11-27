@@ -2,6 +2,8 @@
 
 A complete end-to-end machine learning and Flask web application that compares candidate resumes (`.pdf` and `.docx`) against custom job descriptions, predicts continuous `0–100` suitability scores, classifies suitability categories, ranks applicants in descending order, and explains matched/missing skills and experience alignment.
 
+**Live Deployed Application:** [https://fitscore-ai-lk9i.onrender.com/](https://fitscore-ai-lk9i.onrender.com/) *(Hosted on Render free tier — first request after inactivity may take ~30–50 seconds to wake up.)*
+
 ---
 
 ## Features
