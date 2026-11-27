@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}FitScore AI – Resume-to-Job Matching System{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <div class="pill-badge">
+        <i data-lucide="sparkles"></i>
+        <span>AI-Powered Candidate Matching &amp; Ranking</span>
+      </div>
+      <h1 class="hero-title">Find the Right Candidate, Faster.</h1>
+      <p class="hero-subtitle">
+        Compare one or dozens of PDF and DOCX resumes directly against any custom job description.
+        FitScore AI combines machine learning scoring, category classification, and transparent skill-gap
+        explanations to rank applicants objectively in seconds.
+      </p>
+      <div class="hero-actions">
+        <a href="{{ url_for('screening') }}" class="btn btn-primary btn-lg">
+          <span>Start Screening</span>
+          <i data-lucide="arrow-right"></i>
+        </a>
+        <a href="#how-it-works" class="btn btn-secondary btn-lg">
+          <span>How It Works</span>
+        </a>
+      </div>
+      <div class="hero-trust">
+        <div class="trust-item">
+          <i data-lucide="file-check-2"></i>
+          <span>PDF &amp; DOCX Support</span>
+        </div>
+        <div class="trust-item">
+          <i data-lucide="cpu"></i>
+          <span>CatBoost + Logistic Regression</span>
+        </div>
+        <div class="trust-item">
+          <i data-lucide="shield-check"></i>
+          <span>Zero-Storage Session Privacy</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-eyebrow">Core Capabilities</span>
+      <h2 class="section-title">Built for Transparent, Explainable Screening</h2>
+      <p class="section-desc">
+        Every prediction combines structured skill matching, experience verification, education checks,
+        and TF-IDF text similarity without black-box guesswork.
+      </p>
+    </div>
+
+    <div class="feature-grid">
+      <article class="feature-card">
+        <div class="feature-icon icon-blue">
+          <i data-lucide="file-search"></i>
+        </div>
+        <h3>AI Resume Analysis</h3>
+        <p>
+          Extracts text cleanly from PDF and Word resumes, normalizing technical abbreviations such as
+          ML, NLP, AWS, K8s, and JS across diverse resume layouts.
+        </p>
+      </article>
+
+      <article class="feature-card">
+        <div class="feature-icon icon-indigo">
+          <i data-lucide="list-ordered"></i>
+        </div>
+        <h3>Intelligent Candidate Ranking</h3>
+        <p>
+          Evaluates every uploaded applicant against the same job description and sorts candidates
+          from Rank #1 downward with consistent tie-breaking.
+        </p>
+      </article>
+
+      <article class="feature-card">
+        <div class="feature-icon icon-purple">
+          <i data-lucide="target"></i>
+        </div>
+        <h3>Skill Gap Identification</h3>
+        <p>
+          Highlights matched required skills, missing required skills, and bonus preferred skills
+          alongside experience and degree eligibility checks.
+        </p>
+      </article>
+
+      <article class="feature-card">
+        <div class="feature-icon icon-navy">
+          <i data-lucide="gauge"></i>
+        </div>
+        <h3>Suitability Scoring</h3>
+        <p>
+          Predicts a 0–100 score via our saved CatBoost Regressor and independently assigns a 5-tier
+          suitability category via Logistic Regression.
+        </p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="how-it-works">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-eyebrow">Workflow</span>
+      <h2 class="section-title">How It Works in Three Steps</h2>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <h3>Paste Job Description</h3>
+        <p>Enter any target role, required and preferred skills, minimum experience, and degree expectations.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <h3>Upload Candidate Resumes</h3>
+        <p>Drag and drop one or multiple PDF and DOCX resumes. Corrupted or scanned files are handled safely.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <h3>Review Rankings &amp; Insights</h3>
+        <p>Inspect ranked suitability scores, Chart.js analytics, skill-gap details, and export results to CSV.</p>
+      </div>
+    </div>
+
+    <div class="cta-banner">
+      <div>
+        <h3>Ready to screen your candidate pool?</h3>
+        <p>Launch a new screening session and rank resumes in seconds.</p>
+      </div>
+      <a href="{{ url_for('screening') }}" class="btn btn-primary btn-lg">
+        <span>Start Screening</span>
+        <i data-lucide="arrow-right"></i>
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}FitScore AI – Resume-to-Job Matching System{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="{{ url_for('index') }}" class="brand">
+        <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="FitScore AI Logo" class="brand-icon">
+        <div class="brand-text">
+          <span class="brand-name">FitScore AI</span>
+          <span class="brand-tag">Resume-to-Job Matching</span>
+        </div>
+      </a>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+        <i data-lucide="menu"></i>
+      </button>
+
+      <nav class="nav-links" id="navLinks">
+        <a href="{{ url_for('index') }}" class="nav-link {% if active_page == 'home' %}active{% endif %}">Home</a>
+        {% if session.get('screening_id') %}
+        <a href="{{ url_for('results') }}" class="nav-link {% if active_page == 'results' %}active{% endif %}">Latest Results</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="container flash-stack">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <i data-lucide="{% if category == 'error' %}alert-circle{% elif category == 'warning' %}alert-triangle{% else %}check-circle{% endif %}"></i>
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <strong>FitScore AI</strong> – Resume-to-Job Matching &amp; Candidate Ranking System
+      </div>
+      <div class="footer-meta">
+        Powered by CatBoost Regressor &amp; Logistic Regression · Heuristic-trained decision support
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  {% block scripts_extra %}{% endblock %}
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Screening Results – FitScore AI{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="container page-header-flex">
+    <div>
+      <div class="breadcrumb">
+        <a href="{{ url_for('index') }}">Home</a>
+        <i data-lucide="chevron-right"></i>
+        <a href="{{ url_for('screening') }}">Screen Resumes</a>
+        <i data-lucide="chevron-right"></i>
+        <span>Results</span>
+      </div>
+      <h1 class="page-title">Candidate Ranking Results</h1>
+      <p class="page-subtitle">
+        Target Role: <strong>{{ jd_info.job_role }}</strong> ·
+        {% if jd_info.req_skills %}
+          {{ jd_info.req_skills|length }} Required Skill(s)
+        {% else %}
+          General JD Matching
+        {% endif %}
+        · Scored with <strong>{{ reg_model_name }}</strong> &amp; classified with <strong>{{ cls_model_name }}</strong>.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <a href="{{ url_for('screening') }}" class="btn btn-secondary">
+        <i data-lucide="plus"></i>
+        <span>New Screening</span>
+      </a>
+      {% if candidates %}
+      <a href="{{ url_for('download_csv') }}" class="btn btn-primary">
+        <i data-lucide="download"></i>
+        <span>Download CSV</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="section-compact">
+  <div class="container">
+    <!-- Summary Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Resumes Uploaded</div>
+        <div class="kpi-value">{{ summary.total_uploaded }}</div>
+        <div class="kpi-icon icon-blue"><i data-lucide="files"></i></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Successfully Processed</div>
+        <div class="kpi-value text-success">{{ summary.processed_count }}</div>
+        <div class="kpi-icon icon-green"><i data-lucide="check-circle-2"></i></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Failed Resumes</div>
+        <div class="kpi-value {% if summary.failed_count > 0 %}text-danger{% endif %}">{{ summary.failed_count }}</div>
+        <div class="kpi-icon icon-red"><i data-lucide="alert-triangle"></i></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Highest Suitability Score</div>
+        <div class="kpi-value text-primary">{{ "%.2f"|format(summary.highest_score) }}<span class="kpi-unit">/100</span></div>
+        <div class="kpi-icon icon-indigo"><i data-lucide="award"></i></div>
+      </div>
+    </div>
+
+    {% if failed_files %}
+    <div class="card failed-panel">
+      <div class="failed-header">
+        <i data-lucide="alert-triangle"></i>
+        <h3>Files That Could Not Be Processed ({{ failed_files|length }})</h3>
+      </div>
+      <ul class="failed-list">
+        {% for f in failed_files %}
+        <li><strong>{{ f.filename }}</strong>: {{ f.error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if candidates %}
+    <!-- Parsed Job Requirements Bar -->
+    <div class="card jd-summary-card">
+      <div class="jd-summary-row">
+        <div>
+          <span class="meta-label">Required Skills:</span>
+          {% if jd_info.req_skills %}
+            <div class="tag-row">
+              {% for sk in jd_info.req_skills %}
+                <span class="skill-tag tag-neutral">{{ sk }}</span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <span class="muted-text">None explicitly listed</span>
+          {% endif %}
+        </div>
+        <div>
+          <span class="meta-label">Preferred Skills:</span>
+          {% if jd_info.pref_skills %}
+            <div class="tag-row">
+              {% for sk in jd_info.pref_skills %}
+                <span class="skill-tag tag-info">{{ sk }}</span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <span class="muted-text">None specified</span>
+          {% endif %}
+        </div>
+        <div>
+          <span class="meta-label">Requirements:</span>
+          <div class="muted-text">
+            {% if jd_info.exp_specified %}{{ jd_info.required_experience }}+ yrs exp{% else %}Exp unspecified{% endif %}
+            ·
+            {% if jd_info.edu_specified %}{{ jd_info.required_edu_label }}{% else %}Degree unspecified{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Candidate Ranking Table -->
+    <div class="card">
+      <div class="table-toolbar">
+        <div>
+          <h2>Candidate Ranking Table</h2>
+          <p class="muted-text">Sorted by predicted regression score (descending). Category is predicted independently by Logistic Regression.</p>
+        </div>
+        <div class="toolbar-controls">
+          <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="candidateSearch" placeholder="Search candidate filename...">
+          </div>
+          <select id="categoryFilter" class="filter-select" aria-label="Filter by predicted category">
+            <option value="all">All Categories</option>
+            <option value="Excellent">Excellent</option>
+            <option value="Good">Good</option>
+            <option value="Moderate">Moderate</option>
+            <option value="Poor">Poor</option>
+            <option value="Very Poor">Very Poor</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="ranking-table" id="rankingTable">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Candidate</th>
+              <th>Suitability Score</th>
+              <th>Predicted Category</th>
+              <th>Required Skill Match</th>
+              <th>Experience Match</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in candidates %}
+            <tr data-name="{{ c.filename|lower }}" data-category="{{ c.predicted_category }}">
+              <td>
+                <span class="rank-pill {% if c.rank == 1 %}rank-top{% endif %}">#{{ c.rank }}</span>
+              </td>
+              <td class="candidate-cell">
+                <i data-lucide="file-text"></i>
+                <span class="candidate-name">{{ c.filename }}</span>
+              </td>
+              <td>
+                <div class="score-cell">
+                  <strong>{{ "%.2f"|format(c.predicted_score) }}</strong>
+                  <div class="mini-bar">
+                    <div class="mini-bar-fill" data-width="{{ c.predicted_score }}"></div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                {% set cat_slug = c.predicted_category|lower|replace(' ', '-') %}
+                <span class="badge badge-{{ cat_slug }}">{{ c.predicted_category }}</span>
+              </td>
+              <td>
+                <span class="skill-pct">{{ "%.1f"|format(c.req_skill_match_pct) }}%</span>
+                <span class="muted-sub">({{ c.matched_req_skills_count }}/{{ c.total_req_skills }})</span>
+              </td>
+              <td>
+                <span class="exp-pill {% if c.meets_experience == 1 %}exp-ok{% else %}exp-low{% endif %}">
+                  {{ c.experience_match_label }}
+                </span>
+              </td>
+              <td class="text-right">
+                <a href="{{ url_for('candidate_details', rank=c.rank) }}" class="btn btn-outline btn-sm">
+                  <span>View Details</span>
+                  <i data-lucide="arrow-up-right"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div id="noFilterMatch" class="empty-filter hidden">
+        No candidates match your current search or category filter.
+      </div>
+    </div>
+
+    <!-- Analytics Section (Chart.js) -->
+    <div class="analytics-header">
+      <h2>Screening Analytics</h2>
+      <p>Visual breakdown computed directly from the {{ candidates|length }} processed resume(s) in this session.</p>
+    </div>
+
+    <div class="charts-grid">
+      <div class="card chart-card">
+        <h3>Candidate Score Comparison</h3>
+        <div class="chart-wrap">
+          <canvas id="candidateScoreChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <h3>Suitability Category Distribution</h3>
+        <div class="chart-wrap">
+          <canvas id="categoryDistChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <h3>Suitability Score Distribution</h3>
+        <div class="chart-wrap">
+          <canvas id="scoreDistChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <h3>Required Skill Match Comparison (%)</h3>
+        <div class="chart-wrap">
+          <canvas id="skillMatchChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <p class="disclaimer-note">
+      <i data-lucide="info"></i>
+      <span>Disclaimer: Suitability scores and categories are generated by ML models trained on a heuristic target and serve as decision-support indicators rather than guaranteed hiring outcomes.</span>
+    </p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts_extra %}
+{% if candidates %}
+<div id="analyticsData" class="hidden" data-json="{{ analytics_json }}"></div>
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+{% endif %}
+{% endblock %}

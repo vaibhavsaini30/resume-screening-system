@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Candidate Details – {{ candidate.filename }} – FitScore AI{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="container page-header-flex">
+    <div>
+      <div class="breadcrumb">
+        <a href="{{ url_for('index') }}">Home</a>
+        <i data-lucide="chevron-right"></i>
+        <a href="{{ url_for('results') }}">Results</a>
+        <i data-lucide="chevron-right"></i>
+        <span>Rank #{{ candidate.rank }}</span>
+      </div>
+      <div class="detail-title-row">
+        <span class="rank-pill rank-top">Rank #{{ candidate.rank }} of {{ total_candidates }}</span>
+        <h1 class="page-title">{{ candidate.filename }}</h1>
+      </div>
+      <p class="page-subtitle">Evaluated against target role: <strong>{{ jd_info.job_role }}</strong></p>
+    </div>
+
+    <div class="header-actions">
+      <a href="{{ url_for('results') }}" class="btn btn-secondary">
+        <i data-lucide="arrow-left"></i>
+        <span>Back to Ranking</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="section-compact">
+  <div class="container">
+    <!-- Top Overview: Score + Category + Key Metrics -->
+    <div class="detail-top-grid">
+      <div class="card score-hero-card">
+        <div class="score-ring-wrap">
+          <div class="score-ring" data-score-pct="{{ candidate.predicted_score }}">
+            <div class="score-ring-inner">
+              <span class="score-big">{{ "%.2f"|format(candidate.predicted_score) }}</span>
+              <span class="score-outof">out of 100</span>
+            </div>
+          </div>
+        </div>
+        <div class="score-meta">
+          <div class="meta-label">Predicted Suitability Category</div>
+          {% set cat_slug = candidate.predicted_category|lower|replace(' ', '-') %}
+          <span class="badge badge-lg badge-{{ cat_slug }}">{{ candidate.predicted_category }}</span>
+          <p class="model-note">
+            Score predicted by <strong>{{ reg_model_name }}</strong>; category predicted independently by <strong>{{ cls_model_name }}</strong>.
+            Because they are separate models, the category may occasionally differ from the score band.
+          </p>
+        </div>
+      </div>
+
+      <div class="card metrics-card">
+        <h3>Matching Progress</h3>
+        <div class="progress-item">
+          <div class="progress-label">
+            <span>Required Skill Match ({{ candidate.matched_req_skills_count }}/{{ candidate.total_req_skills }})</span>
+            <strong>{{ "%.1f"|format(candidate.req_skill_match_pct) }}%</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill fill-blue" data-width="{{ candidate.req_skill_match_pct }}"></div>
+          </div>
+        </div>
+
+        <div class="progress-item">
+          <div class="progress-label">
+            <span>Preferred Skill Match ({{ candidate.matched_pref_skills|length }}/{{ candidate.total_pref_skills }})</span>
+            <strong>{{ "%.1f"|format(candidate.pref_skill_match_pct) }}%</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill fill-indigo" data-width="{{ candidate.pref_skill_match_pct }}"></div>
+          </div>
+        </div>
+
+        <div class="progress-item">
+          <div class="progress-label">
+            <span>TF-IDF Resume–JD Similarity</span>
+            <strong>{{ "%.2f"|format(candidate.tfidf_cosine_sim) }}</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill fill-purple" data-width="{{ [candidate.tfidf_cosine_sim_pct, 100]|min }}"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Attribute Cards -->
+    <div class="info-cards-grid">
+      <div class="card info-card">
+        <div class="info-card-head">
+          <i data-lucide="briefcase"></i>
+          <span>Experience</span>
+        </div>
+        <div class="info-card-main">{{ candidate.candidate_experience|int }} Years</div>
+        <div class="info-card-sub">
+          {% if jd_info.exp_specified %}
+            Required: {{ candidate.required_experience|int }}+ yrs ·
+            <span class="{% if candidate.meets_experience == 1 %}text-success{% else %}text-danger{% endif %}">
+              {% if candidate.meets_experience == 1 %}Meets Requirement{% else %}Below Requirement{% endif %}
+            </span>
+          {% else %}
+            JD did not specify minimum years
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card info-card">
+        <div class="info-card-head">
+          <i data-lucide="graduation-cap"></i>
+          <span>Education</span>
+        </div>
+        <div class="info-card-main">{{ candidate.cand_edu_label }}</div>
+        <div class="info-card-sub">
+          {% if jd_info.edu_specified %}
+            Required: {{ jd_info.required_edu_label }} ·
+            <span class="{% if candidate.meets_education == 1 %}text-success{% else %}text-danger{% endif %}">
+              {% if candidate.meets_education == 1 %}Satisfied{% else %}Below Stated Level{% endif %}
+            </span>
+          {% else %}
+            JD did not specify minimum degree
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card info-card">
+        <div class="info-card-head">
+          <i data-lucide="folder-git-2"></i>
+          <span>Projects &amp; Certifications</span>
+        </div>
+        <div class="info-card-main">{{ candidate.num_projects|int }} Projects · {{ candidate.num_certifications|int }} Certs</div>
+        <div class="info-card-sub">
+          {{ candidate.relevant_projects_count|int }} JD-relevant project(s) · {{ candidate.relevant_certs_count|int }} JD-relevant cert(s)
+        </div>
+      </div>
+    </div>
+
+    <!-- Skill Breakdown & Explanation -->
+    <div class="detail-bottom-grid">
+      <div class="card">
+        <h3>Skill Breakdown</h3>
+
+        <div class="skill-group">
+          <div class="skill-group-label text-success">
+            <i data-lucide="check-circle-2"></i>
+            <span>Matched Required Skills ({{ candidate.matched_req_skills|length }})</span>
+          </div>
+          <div class="tag-row">
+            {% if candidate.matched_req_skills %}
+              {% for sk in candidate.matched_req_skills %}
+                <span class="skill-tag tag-success">{{ sk }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="muted-text">No required skills matched.</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="skill-group">
+          <div class="skill-group-label text-danger">
+            <i data-lucide="x-circle"></i>
+            <span>Missing Required Skills ({{ candidate.missing_req_skills|length }})</span>
+          </div>
+          <div class="tag-row">
+            {% if candidate.missing_req_skills %}
+              {% for sk in candidate.missing_req_skills %}
+                <span class="skill-tag tag-danger">{{ sk }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="muted-text">No missing required skills.</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="skill-group">
+          <div class="skill-group-label text-primary">
+            <i data-lucide="star"></i>
+            <span>Matched Preferred Skills ({{ candidate.matched_pref_skills|length }})</span>
+          </div>
+          <div class="tag-row">
+            {% if candidate.matched_pref_skills %}
+              {% for sk in candidate.matched_pref_skills %}
+                <span class="skill-tag tag-info">{{ sk }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="muted-text">No preferred skills matched.</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Candidate-Wise Explanation</h3>
+        <p class="muted-text explanation-intro">
+          Generated directly from extracted resume features and job description matching metrics:
+        </p>
+        <ul class="explanation-list">
+          {% for item in candidate.explanations %}
+          <li class="exp-item exp-{{ item.type }}">
+            <i data-lucide="{% if item.type == 'positive' %}check-circle{% elif item.type == 'negative' %}alert-circle{% elif item.type == 'warning' %}alert-triangle{% else %}info{% endif %}"></i>
+            <span>{{ item.text }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
